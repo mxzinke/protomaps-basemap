@@ -1,4 +1,6 @@
-# Protomaps Basemaps
+# Protomaps Basemaps of Earth
+
+> This is a modified version of the Protomaps Basemaps. It only contains earth data for rundimentary usage.
 
 Build a cartographic "basemap" PMTiles from OpenStreetMap + other datasources, plus MapLibre styles for displaying them in a browser.
 
