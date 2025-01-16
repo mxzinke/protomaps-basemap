@@ -6,16 +6,7 @@ import com.onthegomap.planetiler.config.Arguments;
 import com.onthegomap.planetiler.util.Downloader;
 import com.protomaps.basemap.feature.NaturalEarthDb;
 import com.protomaps.basemap.feature.QrankDb;
-import com.protomaps.basemap.layers.Boundaries;
-import com.protomaps.basemap.layers.Buildings;
 import com.protomaps.basemap.layers.Earth;
-import com.protomaps.basemap.layers.Landcover;
-import com.protomaps.basemap.layers.Landuse;
-import com.protomaps.basemap.layers.Places;
-import com.protomaps.basemap.layers.Pois;
-import com.protomaps.basemap.layers.Roads;
-import com.protomaps.basemap.layers.Transit;
-import com.protomaps.basemap.layers.Water;
 import com.protomaps.basemap.text.FontRegistry;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -27,49 +18,10 @@ public class Basemap extends ForwardingProfile {
 
   public Basemap(NaturalEarthDb naturalEarthDb, QrankDb qrankDb) {
 
-    var admin = new Boundaries();
-    registerHandler(admin);
-    registerSourceHandler("osm", admin::processOsm);
-    registerSourceHandler("ne", admin::processNe);
-
-    var buildings = new Buildings();
-    registerHandler(buildings);
-    registerSourceHandler("osm", buildings::processOsm);
-
-    var landuse = new Landuse();
-    registerHandler(landuse);
-    registerSourceHandler("osm", landuse::processOsm);
-
-    var landcover = new Landcover();
-    registerHandler(landcover);
-    registerSourceHandler("landcover", landcover::processLandcover);
-
-    var place = new Places(naturalEarthDb);
-    registerHandler(place);
-    registerSourceHandler("osm", place::processOsm);
-
-    var poi = new Pois(qrankDb);
-    registerHandler(poi);
-    registerSourceHandler("osm", poi::processOsm);
-
-    var roads = new Roads();
-    registerHandler(roads);
-    registerSourceHandler("osm", roads::processOsm);
-
-    var transit = new Transit();
-    registerHandler(transit);
-    registerSourceHandler("osm", transit::processOsm);
-
-    var water = new Water();
-    registerHandler(water);
-    registerSourceHandler("osm", water::processOsm);
-    registerSourceHandler("osm_water", water::processPreparedOsm);
-    registerSourceHandler("ne", water::processNe);
-
     var earth = new Earth();
     registerHandler(earth);
 
-    registerSourceHandler("osm", earth::processOsm);
+    //registerSourceHandler("osm", earth::processOsm);
     registerSourceHandler("osm_land", earth::processPreparedOsm);
     registerSourceHandler("ne", earth::processNe);
   }
@@ -121,7 +73,8 @@ public class Basemap extends ForwardingProfile {
   }
 
   static void run(Arguments args) {
-    args = args.orElse(Arguments.of("maxzoom", 15));
+    // We explicitly set maxzoom to 13, since we dont go over zoom 13!
+    args = args.orElse(Arguments.of("maxzoom", 13));
 
     Path dataDir = Path.of("data");
     Path sourcesDir = dataDir.resolve("sources");
@@ -133,13 +86,8 @@ public class Basemap extends ForwardingProfile {
 
     var planetiler = Planetiler.create(args)
       .addNaturalEarthSource("ne", nePath, neUrl)
-      .addOsmSource("osm", Path.of("data", "sources", area + ".osm.pbf"), "geofabrik:" + area)
-      .addShapefileSource("osm_water", sourcesDir.resolve("water-polygons-split-3857.zip"),
-        "https://osmdata.openstreetmap.de/download/water-polygons-split-3857.zip")
       .addShapefileSource("osm_land", sourcesDir.resolve("land-polygons-split-3857.zip"),
-        "https://osmdata.openstreetmap.de/download/land-polygons-split-3857.zip")
-      .addGeoPackageSource("landcover", sourcesDir.resolve("daylight-landcover.gpkg"),
-        "https://r2-public.protomaps.com/datasets/daylight-landcover.gpkg");
+        "https://osmdata.openstreetmap.de/download/land-polygons-split-3857.zip");
 
     Path pgfEncodingZip = sourcesDir.resolve("pgf-encoding.zip");
     Downloader.create(planetiler.config()).add("ne", neUrl, nePath)
@@ -151,11 +99,6 @@ public class Basemap extends ForwardingProfile {
     var naturalEarthDb = NaturalEarthDb.fromSqlite(nePath, tmpDir);
     //    var qrankDb = QrankDb.fromCsv(sourcesDir.resolve("qrank.csv.gz"));
     var qrankDb = QrankDb.empty();
-
-    FontRegistry fontRegistry = FontRegistry.getInstance();
-    fontRegistry.setZipFilePath(pgfEncodingZip.toString());
-
-    fontRegistry.loadFontBundle("NotoSansDevanagari-Regular", "1", "Devanagari");
 
     planetiler.setProfile(new Basemap(naturalEarthDb, qrankDb)).setOutput(Path.of(area + ".pmtiles"))
       .run();
