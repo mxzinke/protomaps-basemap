@@ -19,7 +19,9 @@ public class Earth implements ForwardingProfile.LayerPostProcesser {
 
   public void processPreparedOsm(SourceFeature ignoredSf, FeatureCollector features) {
     features.polygon(this.name())
-      .setZoomRange(3, 15).setBufferPixels(8);
+      .setZoomRange(3, 9).setBufferPixels(16);
+    features.polygon(this.name())
+      .setZoomRange(10, 15).setBufferPixels(8);
   }
 
   public void processNe(SourceFeature sf, FeatureCollector features) {
