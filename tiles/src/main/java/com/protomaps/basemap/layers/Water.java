@@ -434,6 +434,23 @@ public class Water implements ForwardingProfile.LayerPostProcessor {
   @Override
   public List<VectorTile.Feature> postProcess(int zoom, List<VectorTile.Feature> items) throws GeometryException {
     items = FeatureMerge.mergeLineStrings(items, 0.5, Earth.PIXEL_TOLERANCE, 4.0);
-    return FeatureMerge.mergeNearbyPolygons(items, Earth.MIN_AREA, Earth.MIN_AREA, 0.5, Earth.BUFFER);
+
+    double mergeFactor = 1;
+    if (zoom <= 7) {
+      mergeFactor = 16;
+    } else if (zoom <= 8) {
+      mergeFactor = 12;
+    } else if (zoom <= 9) {
+      mergeFactor = 8;
+    } else if (zoom <= 10) {
+      mergeFactor = 2;
+    }
+
+    double buffer = Earth.BUFFER;
+    if (zoom >= 7) {
+      buffer = Earth.BUFFER * Math.pow(2, (zoom - 6) / 2);
+    }
+    
+    return FeatureMerge.mergeNearbyPolygons(items, 0, Earth.MIN_AREA, 1 * mergeFactor, buffer);
   }
 }
